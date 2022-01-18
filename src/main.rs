@@ -1,5 +1,8 @@
 use std::env;
 
+mod consts;
+mod on_message;
+
 use serenity::{
     async_trait,
     model::{channel::Message, gateway::Ready},
@@ -16,14 +19,14 @@ impl EventHandler for Handler {
     // Event handlers are dispatched through a threadpool, and so multiple
     // events can be dispatched simultaneously.
     async fn message(&self, ctx: Context, msg: Message) {
-        if msg.content == "!ping" {
-            // Sending a message can fail, due to a network error, an
-            // authentication error, or lack of permissions to post in the
-            // channel, so log to stdout when some error happens, with a
-            // description of it.
-            if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
-                println!("Error sending message: {:?}", why);
+        if let Some(guild_id) = msg.guild_id {
+            if guild_id == consts::GUILD_ID {
+               // This message is in the guild we're interested in, calling the message handler.
+               on_message::on_message(ctx, msg).await
             }
+        } else {
+            // Message was received not over gateway or in a private context, ignoring.
+            ()
         }
     }
 
@@ -34,7 +37,7 @@ impl EventHandler for Handler {
     //
     // In this case, just print what the current user's username is.
     async fn ready(&self, _: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
+        println!("{} is connected! Running with configuration {:?}", ready.user.name, consts::CONFIGURATION_NAME);
     }
 }
 
