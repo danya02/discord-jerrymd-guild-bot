@@ -61,7 +61,7 @@ async fn on_message_by_unverified(ctx: Context, msg: Message) -> Result<()> {
     let guild_id = GuildId(GUILD_ID);
 
     let guild = guild_id.to_guild_cached(&ctx.cache).await.ok_or(ModelError::ItemMissing).wrap_err_with(|| format!("Failed to get guild {:?} from cache", guild_id))?;
-    let mut member = guild_id.member(&ctx.http, &msg.author).await.wrap_err_with(|| format!("Failed to get member {:?} from guild {:?}", &msg.author.id, guild))?;
+    let mut member = guild_id.member(&ctx.http, &msg.author).await.wrap_err_with(|| format!("Failed to get member {:?} from guild {:?}", &msg.author.id, guild_id))?;
 
     member.add_role(&ctx.http, sus_role).await.wrap_err_with(|| format!("Failed to add sus role to member {:?}", member))?;
     member.remove_role(&ctx.http, unverified_role).await.wrap_err_with(|| format!("Failed to remove unverified role from member {:?}", member))?;
@@ -74,7 +74,9 @@ async fn on_message_by_unverified(ctx: Context, msg: Message) -> Result<()> {
     let deny_all = PermissionOverwrite {
         allow: Permissions::empty(),
         deny:Permissions::READ_MESSAGES,
-        kind: PermissionOverwriteType::Member(member.user.id),
+        // The @everyone role has the same ID as the guild it belongs to:
+        // https://discord.com/developers/docs/topics/permissions#role-object
+        kind: PermissionOverwriteType::Role(RoleId(guild_id.0)),
     };
     let allow_member = PermissionOverwrite {
         allow: Permissions::SEND_MESSAGES | Permissions::READ_MESSAGES,
