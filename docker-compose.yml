@@ -1,0 +1,7 @@
+version: "3.9"
+services:
+  discordbot:
+    build: .
+    environment:
+      # Discord token, get yours at https://discord.com/developers
+      - DISCORD_TOKEN=12345
